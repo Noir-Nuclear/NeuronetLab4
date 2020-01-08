@@ -1,11 +1,10 @@
 package Bee;
 
-import common.Params;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 public class Community {
     private Double[][] interval;
@@ -14,32 +13,46 @@ public class Community {
     private Double[][] goodPoints;
     private Double[] bestPoint;
     private Double bestResult;
-    private Function<Params, Double> function;
+    private Function<List<Double>, Double> function;
     private Integer countOfScouts;
     private Integer countOfWorkers;
     private Integer variableCount;
     private Integer countOfBestPoints;
 
-    public Community(Double[][] interval, Integer countOfScouts, Integer countOfWorkers, Function<Params, Double> function, Integer variableCount, Double intervalLength) {
+    public Community(Double[][] interval, Integer countOfScouts, Integer countOfWorkers, Function<List<Double>, Double> function, Integer variableCount, Double intervalLength) {
         this.interval = interval;
         this.function = function;
         this.variableCount = variableCount;
         this.countOfScouts = countOfScouts;
         this.countOfWorkers = countOfWorkers;
         countOfBestPoints = 5;
-        goodResults = new Double[] {Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE, Double.MAX_VALUE};
+        goodResults = new Double[countOfBestPoints];
+        for (int i = 0; i < countOfBestPoints; i++) {
+            goodResults[i] = Double.MAX_VALUE;
+        }
         goodPoints = new Double[countOfBestPoints][variableCount];
         this.intervalLength = intervalLength;
+    }
+
+    public Double getRandomValue(Double begin, Double end) {
+        return Math.random() * (end - begin) + begin;
+    }
+
+    public Double[] getBestPoint() {
+        return bestPoint;
+    }
+
+    public Double getBestResult() {
+        return bestResult;
     }
 
     public void scout() {
         ArrayList<Double> results = new ArrayList<>();
         ArrayList<List<Double>> points = new ArrayList<>();
-        for (int i = 0; i < countOfScouts; i++) {
-            List<Double> newPoint = getNewPoint(null);
+        IntStream.range(0, countOfScouts).mapToObj(i -> getNewPoint(null)).forEach(newPoint -> {
             points.add(newPoint);
-            results.add(function.apply(new Params(newPoint)));
-        }
+            results.add(function.apply(newPoint));
+        });
         getBestPoints(results, points);
     }
 
@@ -52,11 +65,12 @@ public class Community {
                 newInterval[j][0] = goodPoints[i][j] - intervalLength;
                 newInterval[j][1] = goodPoints[i][j] + intervalLength;
             }
-            for (int j = 0; j < countOfWorkers; j++) {
-                List<Double> newPoint = getNewPoint(newInterval);
+            IntStream.range(0, countOfWorkers).
+                    mapToObj(j -> getNewPoint(newInterval)).
+                    forEach(newPoint -> {
                 points.add(newPoint);
-                results.add(function.apply(new Params(newPoint)));
-            }
+                results.add(function.apply(newPoint));
+            });
         }
         getBestPoints(results, points);
     }
@@ -97,23 +111,11 @@ public class Community {
         }
         bestResult = goodResults[0];
         bestPoint = goodPoints[0];
-        for (int i = 1; i < goodResults.length; i++) {
-            if (bestResult > goodResults[i]) {
-                bestResult = goodResults[i];
-                bestPoint = goodPoints[i];
-            }
-        }
-    }
-
-    public Double getRandomValue(Double begin, Double end) {
-        return Math.random() * (end - begin) + begin;
-    }
-
-    public Double[] getBestPoint() {
-        return bestPoint;
-    }
-
-    public Double getBestResult() {
-        return bestResult;
+        IntStream.range(1, goodResults.length).
+                filter(i -> bestResult > goodResults[i]).
+                forEach(i -> {
+            bestResult = goodResults[i];
+            bestPoint = goodPoints[i];
+        });
     }
 }

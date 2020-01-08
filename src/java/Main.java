@@ -1,11 +1,11 @@
 import Bee.Community;
-import common.Params;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.function.Function;
 
 public class Main {
-    private static Function<Params, Double> f = params -> Math.pow(params.args.get(0), 2.0) + Math.pow(params.args.get(1), 2.0);
+    private static Function<List<Double>, Double> f = params -> Math.abs(params.get(0)) + Math.abs(params.get(1));
 
     public static void main(String[] args) {
         Community community = new Community(new Double[][] {{-20.0, 20.0}, {-20.0, 20.0}}, 10, 5, f, 2, 2.0);
